@@ -1,0 +1,5 @@
+error: `#[sort_fields]` doesn't support any attributes
+ --> $DIR/doesnt_allow_attributes.rs:3:15
+  |
+3 | #[sort_fields(foo)]
+  |               ^^^

@@ -1,0 +1,19 @@
+error: `#[sort_columns]` doesn't support any attributes
+  --> $DIR/sort_columns_doesnt_support_attributes.rs:10:16
+   |
+10 | #[sort_columns(foo)]
+   |                ^^^
+
+error[E0433]: failed to resolve: use of undeclared type or module `users`
+  --> $DIR/sort_columns_doesnt_support_attributes.rs:26:28
+   |
+26 |     let users: Vec<User> = users::table
+   |                            ^^^^^ use of undeclared type or module `users`
+
+error[E0433]: failed to resolve: use of undeclared type or module `users`
+  --> $DIR/sort_columns_doesnt_support_attributes.rs:27:17
+   |
+27 |         .select(users::all_columns)
+   |                 ^^^^^ use of undeclared type or module `users`
+
+For more information about this error, try `rustc --explain E0433`.

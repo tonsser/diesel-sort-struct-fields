@@ -1,0 +1,17 @@
+[package]
+name = "diesel-sort-struct-fields"
+version = "0.1.0"
+authors = ["David Pedersen <david.pdrsn@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+proc-macro2 = "^0.4"
+quote = "^0.6"
+syn = { version = "^0.15", features = ["derive", "extra-traits"] }
+
+[dev-dependencies]
+diesel = { version = "^1", features = ["postgres"] }
+trybuild = "1.0.6"
+
+[lib]
+proc-macro = true

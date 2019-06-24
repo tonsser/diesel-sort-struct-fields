@@ -1,0 +1,5 @@
+error: `#[sort_fields]` is not allowed on unions, only structs
+ --> $DIR/not_allowed_on_unions.rs:4:5
+  |
+4 | pub union Thing {
+  |     ^^^^^

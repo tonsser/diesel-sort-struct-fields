@@ -1,0 +1,5 @@
+error: `#[sort_fields]` is not allowed on enums, only structs
+ --> $DIR/not_allowed_on_enums.rs:4:5
+  |
+4 | pub enum Thing {
+  |     ^^^^

@@ -1,0 +1,5 @@
+error: `#[sort_fields]` is not allowed on tuple structs, only structs with named fields
+ --> $DIR/not_allowed_on_tuple_structs.rs:4:17
+  |
+4 | pub struct Thing(i32, i32);
+  |                 ^^^^^^^^^^
