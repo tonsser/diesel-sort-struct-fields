@@ -115,7 +115,7 @@ impl ToTokens for TableDsl {
 #[derive(Debug)]
 struct ColumnDsl {
     name: Ident,
-    ty: Ident,
+    ty: ColumnType,
 }
 
 impl ToTokens for ColumnDsl {
@@ -134,9 +134,33 @@ impl Parse for ColumnDsl {
         let name = input.parse::<Ident>()?;
         input.parse::<Token![-]>()?;
         input.parse::<Token![>]>()?;
-        let ty = input.parse::<Ident>()?;
+
+        let outer_ty = input.parse::<Ident>()?;
+        let ty = if input.peek(Token![<]) {
+            input.parse::<Token![<]>()?;
+            let ty = input.parse::<Ident>()?;
+            input.parse::<Token![>]>()?;
+            ColumnType::Wrapped(outer_ty, ty)
+        } else {
+            ColumnType::Bare(outer_ty)
+        };
 
         Ok(ColumnDsl { name, ty })
+    }
+}
+
+#[derive(Debug)]
+enum ColumnType {
+    Bare(Ident),
+    Wrapped(Ident, Ident),
+}
+
+impl ToTokens for ColumnType {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            ColumnType::Bare(ty) => tokens.extend(quote! { #ty }),
+            ColumnType::Wrapped(constructor, ty) => tokens.extend(quote! { #constructor<#ty> }),
+        }
     }
 }
 
