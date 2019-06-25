@@ -11,6 +11,7 @@ syn = { version = "^0.15", features = ["derive", "extra-traits"] }
 
 [dev-dependencies]
 diesel = { version = "^1", features = ["postgres"] }
+diesel_full_text_search = "1.0.1"
 trybuild = "1.0.6"
 
 [lib]

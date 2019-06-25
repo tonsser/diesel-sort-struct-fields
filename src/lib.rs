@@ -1,10 +1,10 @@
 extern crate proc_macro;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
-    parse2, parse_macro_input,
+    parse2,
     parse_macro_input::parse,
     punctuated::Punctuated,
     spanned::Spanned,
@@ -31,11 +31,11 @@ pub fn sort_fields(
 
 // TODO:
 // - Composite primary keys
-// - use statements within table!
 // - Docs on the table
 // - Docs on the columns
 // - #[sql_name = "type"] attribute
 // - Convert asserts to real errors
+// - Optional id
 #[proc_macro_attribute]
 pub fn sort_columns(
     attr: proc_macro::TokenStream,
@@ -73,10 +73,17 @@ struct TableDsl {
     name: Ident,
     id_column: Ident,
     columns: Punctuated<ColumnDsl, Token![,]>,
+    use_statements: Vec<syn::ItemUse>,
 }
 
 impl Parse for TableDsl {
     fn parse(input: ParseStream) -> syn::parse::Result<Self> {
+        let mut use_statements = Vec::new();
+
+        while let Some(stmt) = input.parse::<syn::ItemUse>().ok() {
+            use_statements.push(stmt)
+        }
+
         let name = input.parse::<Ident>()?;
 
         let inside_parens;
@@ -91,6 +98,7 @@ impl Parse for TableDsl {
             name,
             id_column,
             columns,
+            use_statements,
         })
     }
 }
@@ -99,11 +107,14 @@ impl ToTokens for TableDsl {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let table_name = &self.name;
         let id_column = &self.id_column;
+        let use_statements = &self.use_statements;
 
         let columns = sort_punctuated(&self.columns, |column| &column.name);
 
         tokens.extend(quote! {
             diesel::table! {
+                #(#use_statements)*
+
                 #table_name (#id_column) {
                     #( #columns )*
                 }
