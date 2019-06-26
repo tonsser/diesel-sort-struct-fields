@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
-    parse::{Parse, ParseStream},
+    parse::{Parse, ParseStream, ParseBuffer},
     parse2,
     parse_macro_input::parse,
     punctuated::Punctuated,
@@ -35,7 +35,6 @@ pub fn sort_fields(
 // - Docs on the columns
 // - #[sql_name = "type"] attribute
 // - Convert asserts to real errors
-// - Optional id
 #[proc_macro_attribute]
 pub fn sort_columns(
     attr: proc_macro::TokenStream,
@@ -71,7 +70,7 @@ pub fn sort_columns(
 #[derive(Debug)]
 struct TableDsl {
     name: Ident,
-    id_column: Ident,
+    id_column: Option<Ident>,
     columns: Punctuated<ColumnDsl, Token![,]>,
     use_statements: Vec<syn::ItemUse>,
 }
@@ -86,9 +85,14 @@ impl Parse for TableDsl {
 
         let name = input.parse::<Ident>()?;
 
-        let inside_parens;
-        syn::parenthesized!(inside_parens in input);
-        let id_column = inside_parens.parse::<Ident>()?;
+        let id_column = match try_parse_parens(input) {
+            Ok(inside_parens) => {
+                Some(inside_parens.parse::<Ident>()?)
+            }
+            Err(_) => {
+                None
+            }
+        };
 
         let inside_braces;
         syn::braced!(inside_braces in input);
@@ -106,7 +110,11 @@ impl Parse for TableDsl {
 impl ToTokens for TableDsl {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let table_name = &self.name;
-        let id_column = &self.id_column;
+        let id_column = if let Some(id_column) = &self.id_column {
+            quote! { (#id_column) }
+        } else {
+            quote! {}
+        };
         let use_statements = &self.use_statements;
 
         let columns = sort_punctuated(&self.columns, |column| &column.name);
@@ -115,7 +123,7 @@ impl ToTokens for TableDsl {
             diesel::table! {
                 #(#use_statements)*
 
-                #table_name (#id_column) {
+                #table_name #id_column {
                     #( #columns )*
                 }
             }
@@ -173,6 +181,14 @@ impl ToTokens for ColumnType {
             ColumnType::Wrapped(constructor, ty) => tokens.extend(quote! { #constructor<#ty> }),
         }
     }
+}
+
+fn try_parse_parens<'a>(input: ParseStream<'a>) -> syn::parse::Result<ParseBuffer<'a>> {
+    (|| {
+        let inside_parens;
+        syn::parenthesized!(inside_parens in input);
+        Ok(inside_parens)
+    })()
 }
 
 fn expand_sorted(
