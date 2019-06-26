@@ -30,9 +30,6 @@ pub fn sort_fields(
 }
 
 // TODO:
-// - Docs on the table
-// - Docs on the columns
-// - #[sql_name = "type"] attribute
 // - Convert asserts to real errors
 #[proc_macro_attribute]
 pub fn sort_columns(
@@ -72,6 +69,7 @@ struct TableDsl {
     id_columns: Option<Punctuated<Ident, Token![,]>>,
     columns: Punctuated<ColumnDsl, Token![,]>,
     use_statements: Vec<syn::ItemUse>,
+    attributes: Vec<syn::Attribute>,
 }
 
 impl Parse for TableDsl {
@@ -82,6 +80,7 @@ impl Parse for TableDsl {
             use_statements.push(stmt)
         }
 
+        let attributes = input.call(syn::Attribute::parse_outer)?;
         let name = input.parse::<Ident>()?;
 
         let id_columns = match try_parse_parens(input) {
@@ -101,6 +100,7 @@ impl Parse for TableDsl {
             id_columns,
             columns,
             use_statements,
+            attributes,
         })
     }
 }
@@ -108,6 +108,7 @@ impl Parse for TableDsl {
 impl ToTokens for TableDsl {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let table_name = &self.name;
+        let attributes = &self.attributes;
 
         let id_column = if let Some(id_columns) = &self.id_columns {
             quote! { ( #id_columns ) }
@@ -122,6 +123,7 @@ impl ToTokens for TableDsl {
             diesel::table! {
                 #(#use_statements)*
 
+                #( #attributes )*
                 #table_name #id_column {
                     #( #columns )*
                 }
@@ -134,14 +136,17 @@ impl ToTokens for TableDsl {
 struct ColumnDsl {
     name: Ident,
     ty: ColumnType,
+    attributes: Vec<syn::Attribute>,
 }
 
 impl ToTokens for ColumnDsl {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = &self.name;
         let ty = &self.ty;
+        let attributes = &self.attributes;
 
         tokens.extend(quote! {
+            #(#attributes)*
             #name -> #ty,
         })
     }
@@ -149,6 +154,8 @@ impl ToTokens for ColumnDsl {
 
 impl Parse for ColumnDsl {
     fn parse(input: ParseStream) -> syn::parse::Result<Self> {
+        let attributes = input.call(syn::Attribute::parse_outer)?;
+
         let name = input.parse::<Ident>()?;
         input.parse::<Token![-]>()?;
         input.parse::<Token![>]>()?;
@@ -163,7 +170,7 @@ impl Parse for ColumnDsl {
             ColumnType::Bare(outer_ty)
         };
 
-        Ok(ColumnDsl { name, ty })
+        Ok(ColumnDsl { name, ty, attributes })
     }
 }
 
