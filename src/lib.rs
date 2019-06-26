@@ -3,7 +3,7 @@ extern crate proc_macro;
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{
-    parse::{Parse, ParseStream, ParseBuffer},
+    parse::{Parse, ParseBuffer, ParseStream},
     parse2,
     parse_macro_input::parse,
     punctuated::Punctuated,
@@ -30,7 +30,6 @@ pub fn sort_fields(
 }
 
 // TODO:
-// - Composite primary keys
 // - Docs on the table
 // - Docs on the columns
 // - #[sql_name = "type"] attribute
@@ -70,7 +69,7 @@ pub fn sort_columns(
 #[derive(Debug)]
 struct TableDsl {
     name: Ident,
-    id_column: Option<Ident>,
+    id_columns: Option<Punctuated<Ident, Token![,]>>,
     columns: Punctuated<ColumnDsl, Token![,]>,
     use_statements: Vec<syn::ItemUse>,
 }
@@ -85,13 +84,12 @@ impl Parse for TableDsl {
 
         let name = input.parse::<Ident>()?;
 
-        let id_column = match try_parse_parens(input) {
+        let id_columns = match try_parse_parens(input) {
             Ok(inside_parens) => {
-                Some(inside_parens.parse::<Ident>()?)
+                let id_columns = Punctuated::<Ident, Token![,]>::parse_terminated(&inside_parens)?;
+                Some(id_columns)
             }
-            Err(_) => {
-                None
-            }
+            Err(_) => None,
         };
 
         let inside_braces;
@@ -100,7 +98,7 @@ impl Parse for TableDsl {
 
         Ok(TableDsl {
             name,
-            id_column,
+            id_columns,
             columns,
             use_statements,
         })
@@ -110,8 +108,9 @@ impl Parse for TableDsl {
 impl ToTokens for TableDsl {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let table_name = &self.name;
-        let id_column = if let Some(id_column) = &self.id_column {
-            quote! { (#id_column) }
+
+        let id_column = if let Some(id_columns) = &self.id_columns {
+            quote! { ( #id_columns ) }
         } else {
             quote! {}
         };
