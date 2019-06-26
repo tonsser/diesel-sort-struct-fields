@@ -1,0 +1,11 @@
+error: `#[sort_columns]` only works on the `diesel::table!` macro
+  --> $DIR/sort_columns_on_non_table_item.rs:10:1
+   |
+10 | fn main() {}
+   | ^^
+
+error[E0601]: `main` function not found in crate `$CRATE`
+  |
+  = note: consider adding a `main` function to `$DIR/tests/compile_fail/sort_columns_on_non_table_item.rs`
+
+For more information about this error, try `rustc --explain E0601`.

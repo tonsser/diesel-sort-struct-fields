@@ -29,8 +29,6 @@ pub fn sort_fields(
     }
 }
 
-// TODO:
-// - Convert asserts to real errors
 #[proc_macro_attribute]
 pub fn sort_columns(
     attr: proc_macro::TokenStream,
@@ -48,10 +46,13 @@ pub fn sort_columns(
 
     let ast = match parse::<syn::Macro>(item) {
         Ok(ast) => ast,
-        Err(err) => return err.to_compile_error().into(),
+        Err(err) => return sort_columns_on_wrong_item_error(err.span()).into(),
     };
 
-    assert_eq!(&ast.path.segments.last().unwrap().value().ident, "table");
+    let ident = &ast.path.segments.last().unwrap().value().ident;
+    if ident != "table" {
+        return sort_columns_on_wrong_item_error(ident.span()).into();
+    }
 
     match parse2::<TableDsl>(ast.tts) {
         Ok(table_dsl) => {
@@ -61,6 +62,14 @@ pub fn sort_columns(
         }
         Err(err) => err.to_compile_error().into(),
     }
+}
+
+fn sort_columns_on_wrong_item_error(span: Span) -> TokenStream {
+    syn::Error::new(
+        span,
+        "`#[sort_columns]` only works on the `diesel::table!` macro",
+    )
+    .to_compile_error()
 }
 
 #[derive(Debug)]
@@ -170,7 +179,11 @@ impl Parse for ColumnDsl {
             ColumnType::Bare(outer_ty)
         };
 
-        Ok(ColumnDsl { name, ty, attributes })
+        Ok(ColumnDsl {
+            name,
+            ty,
+            attributes,
+        })
     }
 }
 

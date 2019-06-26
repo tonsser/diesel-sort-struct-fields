@@ -1,0 +1,5 @@
+error: `#[sort_columns]` only works on the `diesel::table!` macro
+  --> $DIR/sort_columns_on_non_table_macro.rs:14:1
+   |
+14 | foo! {}
+   | ^^^
