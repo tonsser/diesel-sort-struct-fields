@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 
-cargo publish --dry-run
-cargo publish --no-dev-version
+cargo release --dry-run
+cargo release --no-dev-version
