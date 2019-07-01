@@ -1,3 +1,107 @@
+//! Macro to sort struct fields and `table!` columns to avoid subtle bugs.
+//!
+//! The way Diesel maps a response from a query into a struct is by treating a row as a tuple and
+//! assigning the fields in the order of the fields in code. Something like (not real code):
+//!
+//! ```rust,ignore
+//! struct User {
+//!     id: i32,
+//!     name: String,
+//! }
+//!
+//! fn user_from_row(row: (i32, String)) -> User {
+//!     User {
+//!         id: row.0,
+//!         name: row.1,
+//!     }
+//! }
+//! ```
+//!
+//! This works well, but it will break in subtle ways if the order of `id` and `name` aren't the
+//! same in `table!` and `struct User { ... }`. So this code doesn't compile:
+//!
+//! ```rust,ignore
+//! #[macro_use]
+//! extern crate diesel;
+//!
+//! use diesel::prelude::*;
+//!
+//! table! {
+//!     users {
+//!         // order here doesn't match order in the struct
+//!         name -> VarChar,
+//!         id -> Integer,
+//!     }
+//! }
+//!
+//! #[derive(Queryable)]
+//! struct User {
+//!     id: i32,
+//!     name: String,
+//! }
+//!
+//! fn main() {
+//!     let db = connect_to_db();
+//!
+//!     users::table
+//!         .select(users::all_columns)
+//!         .load::<User>(&db)
+//!         .unwrap();
+//! }
+//!
+//! fn connect_to_db() -> PgConnection {
+//!     PgConnection::establish("postgres://localhost/diesel-sort-struct-fields").unwrap()
+//! }
+//! ```
+//!
+//! Luckily you get a type error, so Diesel is clearly telling you that something is wrong. However
+//! if the types of `id` and `name` were the same you wouldn't get a type error. You would just
+//! have subtle bugs that could take hours to track down (it did for me).
+//!
+//! This crate prevents that with a simple procedural macro that sorts the fields of your model
+//! struct and `table!` such that you can define them in any order, but once the code gets to the
+//! compiler the order will always be the same.
+//!
+//! Example:
+//!
+//! ```rust
+//! #[macro_use]
+//! extern crate diesel;
+//!
+//! use diesel_sort_struct_fields::{sort_columns, sort_fields};
+//! use diesel::prelude::*;
+//!
+//! #[sort_columns]
+//! table! {
+//!     users {
+//!         name -> VarChar,
+//!         id -> Integer,
+//!     }
+//! }
+//!
+//! #[sort_fields]
+//! #[derive(Queryable)]
+//! struct User {
+//!     id: i32,
+//!     name: String,
+//! }
+//!
+//! fn main() {
+//!     let db = connect_to_db();
+//!
+//!     let users = users::table
+//!         .select(users::all_columns)
+//!         .load::<User>(&db)
+//!         .unwrap();
+//!
+//!     assert_eq!(0, users.len());
+//! }
+//!
+//! fn connect_to_db() -> PgConnection {
+//!     PgConnection::establish("postgres://localhost/diesel-sort-struct-fields").unwrap()
+//! }
+//! ```
+
 extern crate proc_macro;
 
 use proc_macro2::{Span, TokenStream};
@@ -13,6 +117,9 @@ use syn::{
 
 type Result<A, B = syn::Error> = std::result::Result<A, B>;
 
+/// Sort fields in a model struct.
+///
+/// See crate level docs for more info.
 #[proc_macro_attribute]
 pub fn sort_fields(
     attr: proc_macro::TokenStream,
@@ -29,6 +136,9 @@ pub fn sort_fields(
     }
 }
 
+/// Sort columns in a `table!` macro.
+///
+/// See crate level docs for more info.
 #[proc_macro_attribute]
 pub fn sort_columns(
     attr: proc_macro::TokenStream,

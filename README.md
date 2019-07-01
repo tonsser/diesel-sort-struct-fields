@@ -1,7 +1,5 @@
 # diesel-sort-struct-fields
 
-**NB:** This crate is still experimental. Use with caution.
-
 ## The problem
 
 By default [Diesel] maps database responses into Rust tuples and from there into structs. This works well in most cases but it has one very subtle downside:
