@@ -102,8 +102,9 @@
 //! }
 //! ```
 
+#![recursion_limit = "1024"]
 #![deny(unused_imports, dead_code, unused_variables, unused_must_use)]
-#![doc(html_root_url = "https://docs.rs/diesel-sort-struct-fields/0.1.2")]
+#![doc(html_root_url = "https://docs.rs/diesel-sort-struct-fields/0.1.3")]
 
 extern crate proc_macro;
 
