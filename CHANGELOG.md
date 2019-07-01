@@ -22,6 +22,9 @@ N/A
 
 N/A
 
+## 0.1.1 - 2019-07-01
+
+No changes. Just to trigger a rebuild of the docs. [They failed for some reason](https://docs.rs/crate/diesel-sort-struct-fields/0.1.0/builds/169148).
 
 ## 0.1.0 - 2019-07-01
 

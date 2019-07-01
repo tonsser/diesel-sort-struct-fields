@@ -103,7 +103,7 @@
 //! ```
 
 #![deny(unused_imports, dead_code, unused_variables, unused_must_use)]
-#![doc(html_root_url = "https://docs.rs/diesel-sort-struct-fields/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/diesel-sort-struct-fields/0.1.1")]
 
 extern crate proc_macro;
 
