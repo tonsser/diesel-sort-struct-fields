@@ -102,6 +102,9 @@
 //! }
 //! ```
 
+#![deny(unused_imports, dead_code, unused_variables, unused_must_use, missing_docs)]
+#![doc(html_root_url = "https://docs.rs/diesel-sort-struct-fields/0.1.0")]
+
 extern crate proc_macro;
 
 use proc_macro2::{Span, TokenStream};
