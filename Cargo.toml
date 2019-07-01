@@ -10,12 +10,12 @@ license = "MIT"
 name = "diesel-sort-struct-fields"
 readme = "README.md"
 repository = "https://github.com/tonsser/diesel-sort-struct-fields.git"
-version = "0.1.1"
+version = "0.1.2"
 
 [dependencies]
 proc-macro2 = "^0.4"
 quote = "^0.6"
-syn = { version = "^0.15", features = ["derive", "extra-traits"] }
+syn = { version = "^0.15", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 diesel = { version = "^1", features = ["postgres"] }
